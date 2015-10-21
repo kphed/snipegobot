@@ -368,11 +368,6 @@ function offerError(err, userInfo, res, withdraw) {
       console.log('Steam is down/delayed, trying to send offer again in 10 seconds');
       userWithdraw(userInfo, res);
     }, 10000);
-  } else {
-    console.log('error is ', err);
-    userRef.child(userInfo.id).update({
-      errorDetected: true
-    });
   }
 }
 
