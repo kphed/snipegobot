@@ -372,10 +372,6 @@ function offerError(err, userInfo, res, withdraw) {
     console.log('error is ', err);
     userRef.child(userInfo.id).update({
       errorDetected: true
-    }, function() {
-      userRef.child(userInfo.id).update({
-        errorDetected: false
-      });
     });
   }
 }
