@@ -262,6 +262,14 @@ var userWithdraw = function(userInfo, res) {
   var rakeThree = userInfo.jackpotValue * 0.03;
   var rakeTwo = userInfo.jackpotValue * 0.02;
 
+  console.log('userInfo items BEFORE sort: ', userInfo.items);
+
+  userInfo.items = userInfo.items.sort(function(a, b) {
+    return b.market_price - a.market_price;
+  });
+
+  console.log('userInfo items AFTER sort: ', userInfo.items);
+
   offers.loadInventory(730, 2, true, function (err, inventory) {
     var inventoryData = inventory;
     console.log('Loading inventory');
