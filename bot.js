@@ -219,7 +219,7 @@ var start_offer_server = function() {
 };
 
 var userDeposit = function(userInfo, res) {
-
+  console.log('trade token is ', userInfo.tradeToken);
   var trade = offers.createOffer(userInfo.id);
   var protectionCode = randomstring.generate(7).toUpperCase();
 
