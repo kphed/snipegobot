@@ -110,6 +110,7 @@ client.on('webSession', function (sessionID, cookies) {
       logger.error('Unable to set trade offer cookies: ' + err);
       process.exit(1);
     }
+    init_app();
     logger.debug("Trade offer cookies set.  Got API Key: " + offers.apiKey);
   });
 });
@@ -227,8 +228,6 @@ var start_offer_server = function() {
   var offer_server_handle = offer_server.listen(botInfo.port);
   return offer_server_handle;
 };
-
-init_app();
 
 var userDeposit = function(userInfo, res) {
   console.log('trade token is ', userInfo.tradeToken);
