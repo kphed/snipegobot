@@ -75,8 +75,6 @@ var botInfo = {
   }
 };
 
-init_app();
-
 fs.readFile('polldata.json', function (err, data) {
   if (err) {
     logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: '+err);
@@ -229,6 +227,8 @@ var start_offer_server = function() {
   var offer_server_handle = offer_server.listen(botInfo.port);
   return offer_server_handle;
 };
+
+init_app();
 
 var userDeposit = function(userInfo, res) {
   console.log('trade token is ', userInfo.tradeToken);
