@@ -44,6 +44,8 @@ var logger = new (Winston.Logger)({
   ]
 });
 
+init_app();
+
 // Initialize the Steam client and our trading library
 var client = new SteamUser();
 var offers = new TradeOfferManager({
@@ -110,7 +112,6 @@ client.on('webSession', function (sessionID, cookies) {
       logger.error('Unable to set trade offer cookies: ' + err);
       process.exit(1);
     }
-    init_app();
     logger.debug("Trade offer cookies set.  Got API Key: " + offers.apiKey);
   });
 });
