@@ -165,7 +165,14 @@ offers.on('sentOfferChanged', function (offer, oldState) {
       }
     });
   } else {
-    console.log('Hey there was an issue', TradeOfferManager.ETradeOfferState.Declined);
+    pendingRef.child(offer.id).once('value', function(trade) {
+      userRef.child(trade.val().id).update({
+        tradeID: '',
+        protectionCode: '',
+      }, function() {
+        pendingRef.child(offer.id).remove();
+      });
+    });
   }
 });
 
