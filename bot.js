@@ -44,8 +44,6 @@ var logger = new (Winston.Logger)({
   ]
 });
 
-init_app();
-
 // Initialize the Steam client and our trading library
 var client = new SteamUser();
 var offers = new TradeOfferManager({
@@ -76,6 +74,8 @@ var botInfo = {
     }
   }
 };
+
+init_app();
 
 fs.readFile('polldata.json', function (err, data) {
   if (err) {
