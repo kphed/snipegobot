@@ -160,10 +160,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
               console.log('Successfully added pending offer to queue');
             });
           }
-          delete tradeData[offer.id];
-          pendingRef.set(tradeData, function() {
-            console.log('Cleared item from pending queue');
-          });
+          pendingRef.child(offer.id).remove();
         });
       }
     });
