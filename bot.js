@@ -280,6 +280,7 @@ var userWithdraw = function(userInfo, res) {
 
   offers.loadInventory(730, 2, true, function (err, inventory) {
     var inventoryData = inventory;
+    var raked = '';
     console.log('Loading inventory');
     if (err) {
       logger.log('info', err);
@@ -291,34 +292,42 @@ var userWithdraw = function(userInfo, res) {
             if (!rake) {
               if (itemPrice > rakeNine && itemPrice < rakeTen) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeEight && itemPrice < rakeNine) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeSeven && itemPrice < rakeEight) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeSix && itemPrice < rakeSeven) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeFive && itemPrice < rakeSix) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeFour && itemPrice < rakeFive) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeThree && itemPrice < rakeFour) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               }
               else if (itemPrice > rakeTwo && itemPrice < rakeThree) {
                 rake = true;
+                raked = userInfo.items[i].market_hash_name;
                 break;
               } else {
                 items.push(inventoryData[j]);
@@ -336,7 +345,7 @@ var userWithdraw = function(userInfo, res) {
       var trade = offers.createOffer(userInfo.winner.id);
       console.log('Here are the items I am giving the user', items);
       trade.addMyItems(items);
-      trade.send('Thanks for playing, here are your winnings! Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
+      trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
         if (err) {
           logger.log('info', err);
           offerError(err, userInfo, res, true);
