@@ -166,12 +166,16 @@ offers.on('sentOfferChanged', function (offer, oldState) {
     });
   } else {
     pendingRef.child(offer.id).once('value', function(trade) {
-      userRef.child(trade.val().id).update({
-        tradeID: '',
-        protectionCode: '',
-      }, function() {
-        pendingRef.child(offer.id).remove();
-      });
+      if (trade.val().id) {
+        userRef.child(trade.val().id).update({
+          tradeID: '',
+          protectionCode: '',
+        }, function() {
+          pendingRef.child(offer.id).remove();
+        });
+      } else {
+        console.log('There was an error with a trade');
+      }
     });
   }
 });
