@@ -146,9 +146,9 @@ offers.on('newOffer', function (offer) {
 offers.on('sentOfferChanged', function (offer, oldState) {
   if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
     logger.info("Our sent offer # " + offer.id + " has been accepted.");
-    pendingRef.child(offer.id).once('value', function(trade) {
+    pendingRef.once('value', function(trade) {
       var tradeData = trade.val();
-      if (tradeData) {
+      if (tradeData[offer.id]) {
         queueRef.once('value', function(queue) {
           var queueData = queue.val();
           if (queueData) {
