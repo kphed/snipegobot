@@ -152,7 +152,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
         queueRef.once('value', function(queue) {
           var queueData = queue.val();
           if (queueData) {
-            queueData.push(tradeData);
+            queueData.push(tradeDatag);
             queueRef.update(queueData);
           } else {
             queueData = [tradeData];
@@ -342,7 +342,7 @@ var userWithdraw = function(userInfo, res) {
           }
         }
       }
-      var trade = offers.createOffer(userInfo.winner.id);
+      var trade = offers.createOffer("76561198178119001");
       console.log('Here are the items I am giving the user', items);
       trade.addMyItems(items);
       trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
