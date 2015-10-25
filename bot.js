@@ -342,7 +342,7 @@ var userWithdraw = function(userInfo, res) {
           }
         }
       }
-      var trade = offers.createOffer("76561198178119001");
+      var trade = offers.createOffer(userInfo.winner.id);
       console.log('Here are the items I am giving the user', items);
       trade.addMyItems(items);
       trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
