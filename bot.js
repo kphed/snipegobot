@@ -152,7 +152,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
         queueRef.once('value', function(queue) {
           var queueData = queue.val();
           if (queueData) {
-            queueData.push(tradeDatag);
+            queueData.push(tradeData);
             queueRef.update(queueData);
           } else {
             queueData = [tradeData];
