@@ -157,7 +157,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
     });
   } else {
     pendingRef.child(offer.id).once('value', function(trade) {
-      if (trade.val().id) {
+      if (trade.val()) {
         userRef.child(trade.val().id).update({
           tradeID: '',
           protectionCode: '',
