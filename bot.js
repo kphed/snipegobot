@@ -149,27 +149,27 @@ offers.on('sentOfferChanged', function (offer, oldState) {
     pendingRef.child(offer.id).once('value', function(trade) {
       var tradeData = trade.val();
       if (tradeData) {
-        queueRef.once('value', function(queue) {
-          var queueData = queue.val();
-          if (queueData) {
-            console.log('queueData exists: ', queueData);
-            queueRef.push(queueData, function() {
-              console.log('Queue Data exists. Successfully added pending offer ' + offer.id + ' to queue');
-              pendingRef.child(offer.id).remove();
-            });
-          } else {
-            console.log('queueData does not exist');
-            queueData = [tradeData];
-            queueRef.set(queueData, function() {
-              console.log('Queue Data DID NOT exist. Successfully added pending offer ' + offer.id + ' to queue');
-              pendingRef.child(offer.id).remove();
-            });
-          }
-        });
-        // queueRef.push(tradeData, function() {
-        //   console.log('Successfully added pending offer ' + offer.id + ' to queue');
-        //   pendingRef.child(offer.id).remove();
+        // queueRef.once('value', function(queue) {
+        //   var queueData = queue.val();
+        //   if (queueData) {
+        //     console.log('queueData exists: ', queueData);
+        //     queueRef.push(queueData, function() {
+        //       console.log('Queue Data exists. Successfully added pending offer ' + offer.id + ' to queue');
+        //       pendingRef.child(offer.id).remove();
+        //     });
+        //   } else {
+        //     console.log('queueData does not exist');
+        //     queueData = [tradeData];
+        //     queueRef.set(queueData, function() {
+        //       console.log('Queue Data DID NOT exist. Successfully added pending offer ' + offer.id + ' to queue');
+        //       pendingRef.child(offer.id).remove();
+        //     });
+        //   }
         // });
+        queueRef.push(tradeData, function() {
+          console.log('Successfully added pending offer ' + offer.id + ' to queue');
+          pendingRef.child(offer.id).remove();
+        });
       }
     });
   } else {
