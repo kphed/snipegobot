@@ -152,15 +152,21 @@ offers.on('sentOfferChanged', function (offer, oldState) {
         queueRef.once('value', function(queue) {
           var queueData = queue.val();
           if (queueData) {
+            console.log('queueData exists before:', queueData);
             queueData.push(tradeData);
-            queueRef.update(queueData);
+            console.log('queueData exists after:', queueData);
+            queueRef.set(queueData, function() {
+              console.log('Queue Data exists. Successfully added pending offer ' + offer.id + ' to queue');
+              pendingRef.child(offer.id).remove();
+            });
           } else {
+            console.log('queueData does not exist');
             queueData = [tradeData];
             queueRef.set(queueData, function() {
-              console.log('Successfully added pending offer to queue');
+              console.log('Queue Data DID NOT exist. Successfully added pending offer ' + offer.id + ' to queue');
+              pendingRef.child(offer.id).remove();
             });
           }
-          pendingRef.child(offer.id).remove();
         });
       }
     });
@@ -270,13 +276,9 @@ var userWithdraw = function(userInfo, res) {
   var rakeThree = userInfo.jackpotValue * 0.03;
   var rakeTwo = userInfo.jackpotValue * 0.02;
 
-  console.log('userInfo items BEFORE sort: ', userInfo.items);
-
   userInfo.items = userInfo.items.sort(function(a, b) {
     return b.market_price - a.market_price;
   });
-
-  console.log('userInfo items AFTER sort: ', userInfo.items);
 
   offers.loadInventory(730, 2, true, function (err, inventory) {
     var inventoryData = inventory;
@@ -343,13 +345,13 @@ var userWithdraw = function(userInfo, res) {
         }
       }
       var trade = offers.createOffer(userInfo.winner.id);
-      console.log('Here are the items I am giving the user', items);
       trade.addMyItems(items);
       trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
         if (err) {
           logger.log('info', err);
           offerError(err, userInfo, res, true);
         } else {
+          console.log('Successfully sent items back to user');
           res.json({status: 'Trade offer status: ' + status + ' trade ID: ' + trade.id});
         }
       });
@@ -391,7 +393,13 @@ function offerError(err, userInfo, res, withdraw) {
   else if (err.indexOf('20') > -1) {
     setTimeout(function() {
       console.log('Steam is down/delayed, trying to send offer again in 10 seconds');
-      userWithdraw(userInfo, res);
+      if (withdraw) {
+        console.log('Re-trying withdrawal');
+        userWithdraw(userInfo, res);
+      } else {
+        console.log('Re-trying deposit');
+        userDeposit(userInfo, res);
+      }
     }, 10000);
   }
 }
