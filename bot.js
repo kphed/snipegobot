@@ -22,6 +22,20 @@ ref.authWithCustomToken(token, function(error, authData) {
   }
 });
 
+ref.onAuth(function(authData) {
+  if (authData) {
+    console.log('Successfully authenticated');
+  } else {
+    ref.authWithCustomToken(token, function(error, authData) {
+      if (error) {
+        console.log('error! ', error);
+      } else {
+        console.log('Authenticated');
+      }
+    });
+  }
+});
+
 var pendingRef = new Firebase('https://snipego.firebaseio.com/pending_offers');
 
 var queueRef = new Firebase('https://snipego.firebaseio.com/queue');
