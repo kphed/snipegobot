@@ -65,7 +65,7 @@ var offers = new TradeOfferManager({
     domain:       'snipego.com',
     language:     "en", // English item descriptions
     pollInterval: 10000, // (Poll every 10 seconds (10,000 ms)
-    cancelTime:   3600000 // Expire any outgoing trade offers that have been up for 5+ minutes (300,000 ms)
+    cancelTime:   360000000 // Expire any outgoing trade offers that have been up for 5+ minutes (300,000 ms)
 });
 
 // == BOT INFO == //
