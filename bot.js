@@ -33,6 +33,8 @@ var pendingRef = new Firebase('https://snipego.firebaseio.com/pending_offers');
 
 var queueRef = new Firebase('https://snipego.firebaseio.com/queue');
 
+var winningRef = new Firebase('https://snipego.firebaseio.com/winning_offers');
+
 var userRef = new Firebase('https://snipego.firebaseio.com/users');
 
 var logger = new (Winston.Logger)({
@@ -147,7 +149,7 @@ offers.on('newOffer', function (offer) {
 });
 
 offers.on('sentOfferChanged', function (offer, oldState) {
-  if (offer.state == TradeOfferManager.ETradeOfferState.Accepted) {
+  if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
     logger.info("Our sent offer # " + offer.id + " has been accepted.");
     pendingRef.child(offer.id).once('value', function(trade) {
       var tradeData = trade.val();
@@ -156,6 +158,28 @@ offers.on('sentOfferChanged', function (offer, oldState) {
           console.log('Successfully added pending offer ' + offer.id + ' to queue');
           pendingRef.child(offer.id).remove();
         });
+      } else {
+        console.log('We could not find this offer under pending, checking winning database');
+        winningRef.child(offer.id).once('value', function(data) {
+          var winningOffer = data.val();
+          if (winningOffer) {
+            console.log('Offer accepted was a winning offer, removing it from database');
+            winningRef.child(offer.id).remove();
+          } else {
+            console.log('We could not find this trade anywhere');
+          }
+        });
+      }
+    });
+  } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
+    console.log('Items unavailable for trade error, checking...');
+    winningRef.child(offer.id).once('value', function(data) {
+      var winningOffer = data.val();
+      if (winningOffer) {
+        console.log('This offer was a winning offer, re-send it');
+        userWithdraw(winningOffer.userInfo);
+      } else {
+        console.log('This was just an offer that had unavailable items');
       }
     });
   } else {
@@ -165,6 +189,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
           tradeID: '',
           protectionCode: '',
         }, function() {
+          console.log('Trade offer canceled, tradeID: ', trade.val().id);
           pendingRef.child(offer.id).remove();
         });
       } else {
@@ -200,9 +225,6 @@ function init() {
 
 }
 
-
-// =============== the offer server and its command routes ================ //
-
 var startOfferServer = function() {
   var offerServerHandle = offerServer.listen(botInfo.port);
   return offerServerHandle;
@@ -235,7 +257,7 @@ offerServer.post('/user-deposit', function(req, res) {
   userDeposit(userInfo, res);
 });
 
-var userWithdraw = function(userInfo, res) {
+var userWithdraw = function(userInfo) {
 
   var items = [];
   var rake = false;
@@ -322,10 +344,14 @@ var userWithdraw = function(userInfo, res) {
       trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
         if (err) {
           logger.log('info', err);
-          offerError(err, userInfo, res, true);
+          offerError(err, userInfo, true);
         } else {
-          console.log('Successfully sent items back to user');
-          res.json({status: 'Trade offer status: ' + status + ' trade ID: ' + trade.id});
+          console.log('Successfully sent items back to user, tradeID: ', trade.id);
+          winningRef.child(trade.id).set({
+            userInfo: userInfo
+          }, function() {
+            console.log('Added this trade to the winning database. Trade ID: ', trade.id);
+          });
         }
       });
     }
@@ -335,7 +361,7 @@ var userWithdraw = function(userInfo, res) {
 offerServer.post('/user-withdraw', function(req, res) {
   console.log('CALLING BOT WITHDRAW', req.body);
   var userInfo = req.body;
-  userWithdraw(userInfo, res);
+  userWithdraw(userInfo);
 });
 
 // [if we dont receive a route we can handle]
@@ -345,9 +371,6 @@ offerServer.all('*', function(req, resp) {
   resp.end();
 });
 
-
-// ============================== UTILITY FUNCTIONS ====================================//
-
 function offerError(err, userInfo, res, withdraw) {
   err = String(err);
 
@@ -356,7 +379,7 @@ function offerError(err, userInfo, res, withdraw) {
     setTimeout(function() {
       if (withdraw) {
         console.log('Re-trying withdrawal');
-        userWithdraw(userInfo, res);
+        userWithdraw(userInfo);
       } else {
         console.log('Re-trying deposit');
         userDeposit(userInfo, res);
@@ -368,7 +391,7 @@ function offerError(err, userInfo, res, withdraw) {
       console.log('Steam is down/delayed, trying to send offer again in 10 seconds');
       if (withdraw) {
         console.log('Re-trying withdrawal');
-        userWithdraw(userInfo, res);
+        userWithdraw(userInfo);
       } else {
         console.log('Re-trying deposit');
         userDeposit(userInfo, res);
@@ -377,10 +400,9 @@ function offerError(err, userInfo, res, withdraw) {
   }
 }
 
-// ============================== Handle Fatal sudden termination ============================== //
 
 function exitHandler(options, err) {
-  process.stdin.resume(); // == so console dosnt close instantly == //
+  process.stdin.resume();
   if (options.cleanup) {
     options.server_handle.close();
   }
