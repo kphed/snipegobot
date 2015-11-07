@@ -1,4 +1,5 @@
-// == Require Our Stuff == //
+'use strict';
+
 var fs = require('fs');
 var Steam = require('steam');
 var SteamUser = require('steam-user');
@@ -8,9 +9,10 @@ var randomstring = require('randomstring');
 var express = require('express');
 var bodyParser = require('body-parser');
 var Firebase = require('firebase');
-var FirebaseTokenGenerator = require("firebase-token-generator");
+var FirebaseTokenGenerator = require('firebase-token-generator');
 var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
-var token = tokenGenerator.createToken({uid: "snipego"}, {admin: true});
+var expiry = (new Date().getTime()/1000) + 10 * 365 * 24 * 60 * 60;
+var token = tokenGenerator.createToken({uid: "snipego"}, {admin: true, expires: expiry});
 
 var ref = new Firebase('https://snipego.firebaseio.com/');
 
@@ -22,19 +24,10 @@ ref.authWithCustomToken(token, function(error, authData) {
   }
 });
 
-ref.onAuth(function(authData) {
-  if (authData) {
-    console.log('Successfully authenticated');
-  } else {
-    ref.authWithCustomToken(token, function(error, authData) {
-      if (error) {
-        console.log('error! ', error);
-      } else {
-        console.log('Authenticated');
-      }
-    });
-  }
-});
+var offerServer = express();
+
+offerServer.use(bodyParser.json());
+offerServer.use(bodyParser.urlencoded({ extended: true}));
 
 var pendingRef = new Firebase('https://snipego.firebaseio.com/pending_offers');
 
@@ -42,7 +35,6 @@ var queueRef = new Firebase('https://snipego.firebaseio.com/queue');
 
 var userRef = new Firebase('https://snipego.firebaseio.com/users');
 
-// == setup winston logger interfaces == //
 var logger = new (Winston.Logger)({
   transports: [
     new (Winston.transports.Console)({
@@ -58,17 +50,15 @@ var logger = new (Winston.Logger)({
   ]
 });
 
-// Initialize the Steam client and our trading library
 var client = new SteamUser();
 var offers = new TradeOfferManager({
     steam:        client,
     domain:       'snipego.com',
-    language:     "en", // English item descriptions
+    language:     'en',
     pollInterval: 10000,
-    cancelTime:   86400000
+    cancelTime:   null
 });
 
-// == BOT INFO == //
 var botInfo = {
   username: 'veeeannn',
   password: 'vita2977',
@@ -93,7 +83,7 @@ fs.readFile('polldata.json', function (err, data) {
   if (err) {
     logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: '+err);
   } else {
-    logger.debug("Found previous trade offer poll data.  Importing it to keep things running smoothly.");
+    logger.debug('Found previous trade offer poll data.  Importing it to keep things running smoothly.');
     offers.pollData = JSON.parse(data);
   }
 });
@@ -106,7 +96,7 @@ client.logOn({
 });
 
 client.on('loggedOn', function (details) {
-  logger.info("Logged into Steam as " + client.steamID.getSteam3RenderedID());
+  logger.info('Logged into Steam as ' + client.steamID.getSteam3RenderedID());
 });
 
 client.on('error', function (e) {
@@ -117,42 +107,41 @@ client.on('error', function (e) {
 });
 
 client.on('webSession', function (sessionID, cookies) {
-  logger.debug("Got web session");
+  logger.debug('Got web session');
   client.friends.setPersonaState(SteamUser.Steam.EPersonaState.Online);
   offers.setCookies(cookies, function (err){
     if (err) {
       logger.error('Unable to set trade offer cookies: ' + err);
       process.exit(1);
     }
-    init_app();
-    logger.debug("Trade offer cookies set.  Got API Key: " + offers.apiKey);
+    init();
+    logger.debug('Trade offer cookies set.  Got API Key: ' + offers.apiKey);
   });
 });
 
 client.on('accountLimitations', function (limited, communityBanned, locked, canInviteFriends) {
   if (limited) {
-    logger.warn("Our account is limited. We cannot send friend invites, use the market, open group chat, or access the web API.");
+    logger.warn('Our account is limited. We cannot send friend invites, use the market, open group chat, or access the web API.');
   }
   if (communityBanned){
-    logger.warn("Our account is banned from Steam Community");
+    logger.warn('Our account is banned from Steam Community');
   }
   if (locked){
-    logger.error("Our account is locked. We cannot trade/gift/purchase items, play on VAC servers, or access Steam Community.  Shutting down.");
+    logger.error('Our account is locked. We cannot trade/gift/purchase items, play on VAC servers, or access Steam Community.  Shutting down.');
     process.exit(1);
   }
   if (!canInviteFriends){
-    logger.warn("Our account is unable to send friend requests.");
+    logger.warn('Our account is unable to send friend requests.');
   }
 });
 
 offers.on('newOffer', function (offer) {
-  logger.info("New offer #" + offer.id + " from " + offer.partner.getSteam3RenderedID());
-  logger.info("User " + offer.partner.getSteam3RenderedID() + " offered an invalid trade.  Declining offer.");
+  logger.info('User ' + offer.partner.getSteam3RenderedID() + ' offered an invalid trade.  Declining offer.');
   offer.decline(function (err) {
     if (err) {
-      logger.error("Unable to decline offer " + offer.id + " : " + err.message);
+      logger.error('Unable to decline offer ' + offer.id + ' : ' + err.message);
     } else {
-      logger.debug("Offer declined");
+      logger.debug('Offer declined');
     }
   });
 });
@@ -187,7 +176,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
 
 // Steam is down or the API is having issues
 offers.on('pollFailure', function (err) {
-  logger.error("Error polling for trade offers: " + err);
+  logger.error('Error polling for trade offers: ' + err);
 });
 
 // When we receive new trade offer data, save it so we can use it after a crash/quit
@@ -195,33 +184,18 @@ offers.on('pollData', function (pollData) {
   fs.writeFile('polldata.json', JSON.stringify(pollData));
 });
 
-
-// == define offer server == //
-var offer_server = express();
-offer_server.use(bodyParser.json()); // == to support JSON-encoded bodies == //
-offer_server.use(bodyParser.urlencoded({ extended: true})); // == To support URL-encoded bodies == //
-
-
-// == our main start funciton to run when steam is all set up == //
-function init_app() {
+function init() {
   logger.log('info', 'Bot is now fully logged in');
 
-  // == init app can be called when we relogin and in that case we dont wanna start over our logger or offer server == //
   if (botInfo.state !== 'running') {
-  //   backpack_logger.start();
 
-    var offer_server_handle = start_offer_server();
+    var offerServerHandle = startOfferServer();
 
     botInfo.state = 'running';
 
-    // == in the event of fatal error== //
-
-    //do something when app is closing
-    process.on('exit', exitHandler.bind(null,{server_handle : offer_server_handle, cleanup: true, exit:true}));
-    //catches ctrl+c event
-    process.on('SIGINT', exitHandler.bind(null, {server_handle : offer_server_handle, cleanup: true, exit:true}));
-    //catches uncaught exceptions
-    process.on('uncaughtException', exitHandler.bind(null, {server_handle : offer_server_handle, exit:true}));
+    process.on('exit', exitHandler.bind(null,{server_handle : offerServerHandle, cleanup: true, exit:true}));
+    process.on('SIGINT', exitHandler.bind(null, {server_handle : offerServerHandle, cleanup: true, exit:true}));
+    process.on('uncaughtException', exitHandler.bind(null, {server_handle : offerServerHandle, exit:true}));
   }
 
 }
@@ -229,9 +203,9 @@ function init_app() {
 
 // =============== the offer server and its command routes ================ //
 
-var start_offer_server = function() {
-  var offer_server_handle = offer_server.listen(botInfo.port);
-  return offer_server_handle;
+var startOfferServer = function() {
+  var offerServerHandle = offerServer.listen(botInfo.port);
+  return offerServerHandle;
 };
 
 var userDeposit = function(userInfo, res) {
@@ -255,7 +229,7 @@ var userDeposit = function(userInfo, res) {
   });
 };
 
-offer_server.post('/user-deposit', function(req, res) {
+offerServer.post('/user-deposit', function(req, res) {
   console.log('CALLING BOT DEPOSIT', req.body);
   var userInfo = req.body;
   userDeposit(userInfo, res);
@@ -358,14 +332,14 @@ var userWithdraw = function(userInfo, res) {
   });
 };
 
-offer_server.post('/user-withdraw', function(req, res) {
+offerServer.post('/user-withdraw', function(req, res) {
   console.log('CALLING BOT WITHDRAW', req.body);
   var userInfo = req.body;
   userWithdraw(userInfo, res);
 });
 
 // [if we dont receive a route we can handle]
-offer_server.all('*', function(req, resp) {
+offerServer.all('*', function(req, resp) {
   resp.type('application/json');
   resp.json({'error' : 'server error'});
   resp.end();
