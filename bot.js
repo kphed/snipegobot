@@ -83,7 +83,7 @@ var botInfo = {
 
 fs.readFile('polldata.json', function (err, data) {
   if (err) {
-    logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: '+err);
+    logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: ' + err);
   } else {
     logger.debug('Found previous trade offer poll data.  Importing it to keep things running smoothly.');
     offers.pollData = JSON.parse(data);
@@ -159,8 +159,8 @@ offers.on('sentOfferChanged', function (offer, oldState) {
           pendingRef.child(offer.id).remove();
         });
       } else {
-        console.log('We could not find this offer under pending, checking winning database');
         winningRef.child(offer.id).once('value', function(data) {
+          console.log('We could not find this offer under pending, checking winning database');
           var winningOffer = data.val();
           if (winningOffer) {
             console.log('Offer accepted was a winning offer, removing it from database');
@@ -172,8 +172,8 @@ offers.on('sentOfferChanged', function (offer, oldState) {
       }
     });
   } else if (offer.state === TradeOfferManager.ETradeOfferState.InvalidItems) {
-    console.log('Items unavailable for trade error, checking...');
     winningRef.child(offer.id).once('value', function(data) {
+      console.log('Items unavailable for trade error, checking...');
       var winningOffer = data.val();
       if (winningOffer) {
         console.log('This offer was a winning offer, re-send it');
@@ -257,7 +257,7 @@ offerServer.post('/user-deposit', function(req, res) {
   userDeposit(userInfo, res);
 });
 
-var userWithdraw = function(userInfo) {
+var userWithdraw = function(userInfo, res) {
 
   var items = [];
   var rake = false;
@@ -344,13 +344,14 @@ var userWithdraw = function(userInfo) {
       trade.send('Thanks for playing, here are your winnings! Our rake was: ' + raked + ' Still feeling lucky? Play again!', userInfo.tradeToken, function(err, status) {
         if (err) {
           logger.log('info', err);
-          offerError(err, userInfo, true);
+          offerError(err, userInfo, false, true);
         } else {
           console.log('Successfully sent items back to user, tradeID: ', trade.id);
           winningRef.child(trade.id).set({
             userInfo: userInfo
           }, function() {
             console.log('Added this trade to the winning database. Trade ID: ', trade.id);
+            return;
           });
         }
       });
@@ -361,7 +362,7 @@ var userWithdraw = function(userInfo) {
 offerServer.post('/user-withdraw', function(req, res) {
   console.log('CALLING BOT WITHDRAW', req.body);
   var userInfo = req.body;
-  userWithdraw(userInfo);
+  userWithdraw(userInfo, res);
 });
 
 // [if we dont receive a route we can handle]
