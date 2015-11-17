@@ -178,6 +178,7 @@ offers.on('sentOfferChanged', function (offer, oldState) {
       if (winningOffer) {
         console.log('This offer was a winning offer, re-send it');
         userWithdraw(winningOffer.userInfo);
+        winningRef.child(offer.id).remove();
       } else {
         console.log('This was just an offer that had unavailable items');
       }
@@ -241,7 +242,7 @@ var userDeposit = function(userInfo, res) {
       logger.log('info', err);
       offerError(err, userInfo, res, false);
     } else {
-      pendingRef.child(trade.id).set({avatar: userInfo.avatar, displayName: userInfo.displayName, id: userInfo.id, items: userInfo.items, itemsCount: userInfo.itemsCount, itemsValue: userInfo.itemsValue, tradeToken: userInfo.tradeToken});
+      pendingRef.child(trade.id).set({avatar: userInfo.avatar, full_avatar: userInfo.full_avatar, displayName: userInfo.displayName, id: userInfo.id, items: userInfo.items, itemsCount: userInfo.itemsCount, itemsValue: userInfo.itemsValue, tradeToken: userInfo.tradeToken});
       userRef.child(userInfo.id).update({
         tradeID: trade.id,
         protectionCode: protectionCode,
