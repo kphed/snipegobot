@@ -400,6 +400,18 @@ function offerError(err, userInfo, res, withdraw) {
       }
     }, 10000);
   }
+  else if (err.indexOf('503') > -1) {
+    setTimeout(function() {
+      console.log('Steam is down/delayed, trying to send offer again in 10 seconds');
+      if (withdraw) {
+        console.log('Re-trying withdrawal');
+        userWithdraw(userInfo);
+      } else {
+        console.log('Re-trying deposit');
+        userDeposit(userInfo, res);
+      }
+    }, 20000);
+  }
 }
 
 
