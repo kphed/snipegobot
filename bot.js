@@ -37,6 +37,8 @@ var winningRef = new Firebase('https://snipego.firebaseio.com/winning_offers');
 
 var userRef = new Firebase('https://snipego.firebaseio.com/users');
 
+var pollDataRef = new Firebase('https://snipego.firebaseio.com/poll_data');
+
 var logger = new (Winston.Logger)({
   transports: [
     new (Winston.transports.Console)({
@@ -81,12 +83,22 @@ var botInfo = {
   }
 };
 
-fs.readFile('polldata.json', function (err, data) {
-  if (err) {
-    logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: ' + err);
-  } else {
+// fs.readFile('polldata.json', function (err, data) {
+//   if (err) {
+//     logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: ' + err);
+//   } else {
+//     logger.debug('Found previous trade offer poll data.  Importing it to keep things running smoothly.');
+//     offers.pollData = JSON.parse(data);
+//   }
+// });
+
+pollDataRef.once('value', function(data) {
+  var dataVal = data.val();
+  if (dataVal) {
     logger.debug('Found previous trade offer poll data.  Importing it to keep things running smoothly.');
-    offers.pollData = JSON.parse(data);
+    offers.pollData = JSON.parse(dataVal);
+  } else {
+    logger.warn('Error reading polldata.json. If this is the first run, this is expected behavior: ');
   }
 });
 
@@ -207,7 +219,8 @@ offers.on('pollFailure', function (err) {
 
 // When we receive new trade offer data, save it so we can use it after a crash/quit
 offers.on('pollData', function (pollData) {
-  fs.writeFile('polldata.json', JSON.stringify(pollData));
+  var pollDataVal = JSON.stringify(pollData);
+  pollDataRef.set(pollData);
 });
 
 function init() {
