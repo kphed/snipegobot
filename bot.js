@@ -220,7 +220,7 @@ offers.on('pollFailure', function (err) {
 // When we receive new trade offer data, save it so we can use it after a crash/quit
 offers.on('pollData', function (pollData) {
   var pollDataVal = JSON.stringify(pollData);
-  pollDataRef.set(pollData);
+  pollDataRef.set(pollDataVal);
 });
 
 function init() {
