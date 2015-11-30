@@ -242,6 +242,11 @@ var userDeposit = function(userInfo, res) {
       logger.log('info', err);
       offerError(err, userInfo, res, false);
     } else {
+      for (var i = 0; i < userInfo.items.length; i++) {
+        if (userInfo.items[i]['$$hashKey']) {
+          delete userInfo.items[i]['$$hashKey'];
+        }
+      }
       pendingRef.child(trade.id).set({avatar: userInfo.avatar, full_avatar: userInfo.full_avatar, displayName: userInfo.displayName, id: userInfo.id, items: userInfo.items, itemsCount: userInfo.itemsCount, itemsValue: userInfo.itemsValue, tradeToken: userInfo.tradeToken});
       userRef.child(userInfo.id).update({
         tradeID: trade.id,
