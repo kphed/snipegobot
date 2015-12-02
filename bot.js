@@ -172,7 +172,6 @@ offers.on('sentOfferChanged', function (offer, oldState) {
         });
       } else {
         winningRef.child(offer.id).once('value', function(data) {
-          console.log('We could not find this offer under pending, checking winning database');
           var winningOffer = data.val();
           if (winningOffer) {
             console.log('Offer accepted was a winning offer, removing it from database');
@@ -234,7 +233,9 @@ function init() {
 
     process.on('exit', exitHandler.bind(null,{server_handle : offerServerHandle, cleanup: true, exit:true}));
     process.on('SIGINT', exitHandler.bind(null, {server_handle : offerServerHandle, cleanup: true, exit:true}));
-    process.on('uncaughtException', exitHandler.bind(null, {server_handle : offerServerHandle, exit:true}));
+    process.on('uncaughtException', function(err) {
+      console.log(err);
+    });
   }
 
 }
@@ -327,21 +328,6 @@ var userWithdraw = function(userInfo, res) {
                 break;
               }
               else if (itemPrice > rakeFive && itemPrice < rakeSix) {
-                rake = true;
-                raked = userInfo.items[i].market_hash_name;
-                break;
-              }
-              else if (itemPrice > rakeFour && itemPrice < rakeFive) {
-                rake = true;
-                raked = userInfo.items[i].market_hash_name;
-                break;
-              }
-              else if (itemPrice > rakeThree && itemPrice < rakeFour) {
-                rake = true;
-                raked = userInfo.items[i].market_hash_name;
-                break;
-              }
-              else if (itemPrice > rakeTwo && itemPrice < rakeThree) {
                 rake = true;
                 raked = userInfo.items[i].market_hash_name;
                 break;
@@ -438,7 +424,6 @@ function exitHandler(options, err) {
   if (options.cleanup) {
     options.server_handle.close();
   }
-
   if (err) {
     console.log(err.stack);
   }
