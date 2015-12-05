@@ -290,6 +290,7 @@ var userWithdraw = function(userInfo, res) {
   var rakeFour = userInfo.jackpotValue * 0.04;
   var rakeThree = userInfo.jackpotValue * 0.03;
   var rakeTwo = userInfo.jackpotValue * 0.02;
+  var rakeOne = userInfo.jackpotValue * 0.01;
 
   userInfo.items = userInfo.items.sort(function(a, b) {
     return b.market_price - a.market_price;
@@ -328,6 +329,26 @@ var userWithdraw = function(userInfo, res) {
                 break;
               }
               else if (itemPrice > rakeFive && itemPrice < rakeSix) {
+                rake = true;
+                raked = userInfo.items[i].market_hash_name;
+                break;
+              }
+              else if (itemPrice > rakeFour && itemPrice < rakeFive) {
+                rake = true;
+                raked = userInfo.items[i].market_hash_name;
+                break;
+              }
+              else if (itemPrice > rakeThree && itemPrice < rakeFour) {
+                rake = true;
+                raked = userInfo.items[i].market_hash_name;
+                break;
+              }
+              else if (itemPrice > rakeTwo && itemPrice < rakeThree) {
+                rake = true;
+                raked = userInfo.items[i].market_hash_name;
+                break;
+              }
+              else if (itemPrice > rakeOne && itemPrice < rakeTwo) {
                 rake = true;
                 raked = userInfo.items[i].market_hash_name;
                 break;
